@@ -1,1 +1,35 @@
+import telebot
 
+import random
+
+from telebot import types
+
+bot = telebot.TeleBot("5559215064:AAEUntBqqBzf0ZP0OgfoR3B1L1siOyD-ts0")
+
+
+@bot.message_handler(commands=['start'])
+def welcome(message):
+
+    bot.send_message(message.chat.id,
+                     "Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>\n Хотите создать новую заметку или посмотреть существующую? Нажмите /help для просмотра возможных комманд.".format(
+                         message.from_user, bot.get_me()), parse_mode='html',)
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.send_message(message.chat.id, "/reg - зарегистрировать новый аккаунт\n /log - войти в существующий аккаунт")
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    try:
+        if call.message:
+            if call.data == 'good':
+                bot.send_message(call.message.chat.id, 'Вот и отличненько 😊')
+            elif call.data == 'bad':
+                bot.send_message(call.message.chat.id, 'Бывает 😢')
+
+
+    except Exception as e:
+        print(repr(e))
+
+
+# RUN
+bot.polling(none_stop=True)
