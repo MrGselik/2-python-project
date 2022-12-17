@@ -1,25 +1,78 @@
 import telebot
-
+import pandas as pd
 import random
 
 from telebot import types
 
-bot = telebot.TeleBot("5559215064:AAEUntBqqBzf0ZP0OgfoR3B1L1siOyD-ts0")
+bot = telebot.TeleBot("censored")
 
+#Начинаем обрабатывать возможные команды:
 
 @bot.message_handler(commands=['start'])
 def welcome(message):
-
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True) #добавляем кнопки для команд
+    btn1 = types.KeyboardButton("/help")
+    btn2 = types.KeyboardButton("/show")
+    btn3 = types.KeyboardButton("/redact")
+    btn4 = types.KeyboardButton("/delete")
+    markup.add(btn1, btn2, btn3, btn4)
+    global situation #переменная, показывающая боту, какой блок кода ему выполнять
+    global df # словарь заметок
+    situation = 'blablabla'
+    df = {}
     bot.send_message(message.chat.id,
-                     "Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>\n Хотите создать новую заметку или посмотреть существующую? Нажмите /help для просмотра возможных комманд.".format(
-                         message.from_user, bot.get_me()), parse_mode='html',)
-@bot.message_handler(commands=['help'])
+                     "Добро пожаловать, {0.first_name}!\nЯ - <b>{1.first_name}</b>\n Хотите создать новую заметку или посмотреть существующую? Нажмите /help, чтобы научиться пользоваться ботом.".format(
+                         message.from_user, bot.get_me()), parse_mode='html', reply_markup=markup)
+@bot.message_handler(commands=['help']) #команда /help - показывает основные команды бота
 def help(message):
-    bot.send_message(message.chat.id, "/reg - зарегистрировать новый аккаунт\n /log - войти в существующий аккаунт")
+    bot.send_message(message.chat.id, "/show - посмотреть заметку\n /redact - создать и (или) отредактировать заметку\n /delete - удалить заметку")
+@bot.message_handler(commands=['show']) #/show - показать заметку
+def show(message):
+    global situation
+    bot.send_message(message.chat.id, "Введите адрес заметки")
+    situation = 'Adresshow'
+@bot.message_handler(commands=['delete'])#/delete - удалить заметку
+def delete(message):
+    global situation
+    bot.send_message(message.chat.id, "Введите адрес заметки")
+    situation = 'Adressdelete'
+@bot.message_handler(commands=['redact'])# /redact - создание и (или) редактирование заметки
+def redact(message):
+    bot.send_message(message.chat.id, "Введите адрес заметки")
+    global situation
+    situation = 'Adressredact'
 
+#Начинаем обрабатывать текстовый ввод пользователя
+@bot.message_handler(content_types = 'text')
+def get_Adress_Redact(message) :
+    global situation
+    global df
+    global curadress
+    if situation == 'Adressredact': # Пользователь вводит адрес заметки, которую хочет отредактировать
+        curadress = message.text
+        situation = 'redact'
+        bot.send_message(message.chat.id, "Введите новую заметку")
+    elif situation == 'redact': # пользователь редактирует заметку адреса curadress
+        bot.send_message(message.chat.id, "ok")
+        df[curadress] = message.text
+        situation = 'blablalba'
+    elif situation == 'Adresshow': # Пользователь вводит адрес заметки, которую хочет увидеть
+        if message.text in df: # Заметка существует
+            bot.send_message(message.chat.id, df[message.text])
+            situation = 'blablabla'
+        else: # Заметки не существует
+            bot.send_message(message.chat.id, "Неправильный адрес")
+            situation = 'blablabla'
+    elif situation == 'Adressdelete': # Пользователь вводит адрес заметки, которую хочет удалить
+        if message.text in df: #заметка существует
+            df.pop(message.text, None)
+            bot.send_message(message.chat.id, 'ok')
+            situation = 'blablabla'
+        else:# заметки и не было
+            bot.send_message(message.chat.id, 'Заметки и так не было:)')
+            situation = 'blablabla'
+    else:
+        bot.send_message(message.chat.id, "Я не понял команду, прости") #Пользователь ошибся
 
- 
-
-
-# RUN
 bot.polling(none_stop=True)
+
